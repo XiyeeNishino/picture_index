@@ -24,20 +24,44 @@
       </div>
     </div>
     <div class="action-buttons">
-      <button @click="setAspectRatio(16 / 9)">16:9</button>
-      <button @click="setAspectRatio(4 / 3)">4:3</button>
-      <button @click="setAspectRatio(1 / 1)">1:1</button>
-      <button @click="setAspectRatio(2 / 3)">2:3</button>
-      <button @click="setAspectRatio(NaN)">Free</button>
-      <button @click="rotate(90)">顺时针旋转 90°</button>
-      <button @click="rotate(-90)">逆时针旋转 90°</button>
-      <button @click="zoom(0.1)">放大</button>
-      <button @click="zoom(-0.1)">缩小</button>
-      <button @click="setDragMode('move')">移动</button>
-      <button @click="setDragMode('crop')">裁剪</button>
+      <el-button-group>
+        <el-button type="primary" circle @click="rotate(90)">
+          <el-icon><refresh-right /></el-icon>
+        </el-button>
+        <el-button type="primary" circle @click="rotate(-90)">
+          <el-icon><refresh-left /></el-icon>
+        </el-button>
+      </el-button-group>
+      <el-button-group>
+        <el-button type="primary" circle @click="zoom(0.1)">
+          <el-icon><zoom-in /></el-icon>
+        </el-button>
+        <el-button type="primary" circle @click="zoom(-0.1)">
+          <el-icon><zoom-out /></el-icon>
+        </el-button>
+      </el-button-group>
+      <el-button-group>
+        <el-button type="primary" circle @click="setDragMode('rank')">
+          <el-icon><rank /></el-icon>
+        </el-button>
+        <el-button type="primary" circle @click="setDragMode('crop')">
+          <el-icon><crop /></el-icon>
+        </el-button>
+      </el-button-group>
+      <el-button-group>
+        <el-button type="primary" @click="setAspectRatio(16 / 9)">16:9</el-button>
+        <el-button type="primary" @click="setAspectRatio(4 / 3)">4:3</el-button>
+        <el-button type="primary" @click="setAspectRatio(1 / 1)">1:1</el-button>
+        <el-button type="primary" @click="setAspectRatio(2 / 3)">2:3</el-button>
+        <el-button type="primary" @click="setAspectRatio(NaN)">Free</el-button>
+      </el-button-group>
     </div>
-    <div class="navigation-button">
-      <button @click="navigateToResultPage">检索</button>
+    <div class="search-controls">
+      <el-select v-model="selectedMaterials" multiple placeholder="请选择材料" class="material-select-static">
+        <el-option label="原色数码布料" value="原色数码布料"></el-option>
+        <el-option label="蕾丝" value="蕾丝"></el-option>
+      </el-select>
+      <button @click="navigateToResultPage" class="search-button">检索</button>
     </div>
   </div>
 </template>
@@ -45,8 +69,24 @@
 <script>
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
+import { ElSelect, ElOption, ElButton, ElButtonGroup, ElIcon } from 'element-plus';
+import 'element-plus/dist/index.css';
+import { RefreshRight, RefreshLeft, ZoomIn, ZoomOut, Rank, Crop } from '@element-plus/icons-vue';
 
 export default {
+  components: {
+    ElSelect, 
+    ElOption,
+    ElButton,
+    ElButtonGroup,
+    ElIcon,
+    RefreshRight,
+    RefreshLeft,
+    ZoomIn,
+    ZoomOut,
+    Rank, 
+    Crop,
+  },
   data() {
     return {
       cropper: null,
@@ -60,6 +100,7 @@ export default {
         scaleY: 1,
       },
       updatingCropData: false,
+      selectedMaterials: [],
     };
   },
   methods: {
@@ -148,7 +189,7 @@ export default {
 <style scoped>
 .title {
     margin-bottom: 20px;
-    font-family: "等线", Arial, sans-serif;
+    font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
 }
 
 .textile-image-search {
@@ -201,7 +242,7 @@ export default {
 .data-controls {
   display: flex;
   flex-direction: column;
-  bottom: 170px;
+  bottom: 140px;
   position: absolute;
 }
 
@@ -248,6 +289,33 @@ export default {
 }
 
 .navigation-button button:hover {
+  background-color: #45a049;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 300px; /* 或根据需要调整宽度 */
+  margin-top: 20px;
+}
+
+.material-select-static {
+  flex-grow: 1; /* 让选择框尽可能填充空间 */
+  margin-right: 20px; /* 在按钮前添加一些间隔 */
+}
+
+.search-button {
+  padding: 10px 20px;
+  background-color: #4CAF50; /* 绿色 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-button:hover {
   background-color: #45a049;
 }
 </style>
