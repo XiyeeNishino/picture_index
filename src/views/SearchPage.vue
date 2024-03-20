@@ -4,7 +4,9 @@
       <h1 class="title">纺织/布料图片检索系统</h1>
     </div>
     <div class="file-input-container">
-      <input type="file" @change="onSelectFile" accept="image/*" class="file-input">
+      <input type="file" @change="onSelectFile" accept="image/*" ref="fileInput" style="display: none;">
+      <el-input v-model="fileName" placeholder="未选择文件" readonly></el-input>
+      <el-button @click="triggerFileInput">选择文件</el-button>
     </div>
     <div class="cropping-container">
       <div class="cropper-container">
@@ -13,13 +15,26 @@
       <div class="preview-and-controls">
         <div class="preview-container"></div>
         <div class="data-controls">
-          <div class="input-group"><label>X:</label><input type="number" v-model.number="cropData.x"></div>
-          <div class="input-group"><label>Y:</label><input type="number" v-model.number="cropData.y"></div>
-          <div class="input-group"><label>Width:</label><input type="number" v-model.number="cropData.width"></div>
-          <div class="input-group"><label>Height:</label><input type="number" v-model.number="cropData.height"></div>
-          <div class="input-group"><label>Rotate:</label><input type="number" v-model.number="cropData.rotate"></div>
-          <div class="input-group"><label>ScaleX:</label><input type="number" v-model.number="cropData.scaleX"></div>
-          <div class="input-group"><label>ScaleY:</label><input type="number" v-model.number="cropData.scaleY"></div>
+          <div class="input-group">
+            <label>X:</label>
+            <el-input-number v-model.number="cropData.x" controls-position="right"></el-input-number>
+          </div>
+          <div class="input-group">
+            <label>Y:</label>
+            <el-input-number v-model.number="cropData.y" controls-position="right"></el-input-number>
+          </div>
+          <div class="input-group">
+            <label>Width:</label>
+            <el-input-number v-model.number="cropData.width" controls-position="right"></el-input-number>
+          </div>
+          <div class="input-group">
+            <label>Height:</label>
+            <el-input-number v-model.number="cropData.height" controls-position="right"></el-input-number>
+          </div>
+          <div class="input-group">
+            <label>Rotate:</label>
+            <el-input-number v-model.number="cropData.rotate" controls-position="right"></el-input-number>
+          </div>
         </div>
       </div>
     </div>
@@ -42,10 +57,14 @@
       </el-button-group>
       <el-button-group>
         <el-button type="primary" circle @click="setDragMode('rank')">
-          <el-icon><rank /></el-icon>
+          <el-icon>
+            <rank />
+          </el-icon>
         </el-button>
         <el-button type="primary" circle @click="setDragMode('crop')">
-          <el-icon><crop /></el-icon>
+          <el-icon>
+            <crop />
+          </el-icon>
         </el-button>
       </el-button-group>
       <el-button-group>
@@ -61,7 +80,8 @@
         <el-option label="原色数码布料" value="原色数码布料"></el-option>
         <el-option label="蕾丝" value="蕾丝"></el-option>
       </el-select>
-      <button @click="navigateToResultPage" class="search-button">检索</button>
+      <el-button type="success" @click="navigateToResultPage">检索</el-button>
+      <!-- <button @click="navigateToResultPage" class="search-button">检索</button> -->
     </div>
   </div>
 </template>
@@ -69,13 +89,13 @@
 <script>
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
-import { ElSelect, ElOption, ElButton, ElButtonGroup, ElIcon } from 'element-plus';
+import { ElSelect, ElOption, ElButton, ElButtonGroup, ElIcon, ElInputNumber } from 'element-plus';
 import 'element-plus/dist/index.css';
 import { RefreshRight, RefreshLeft, ZoomIn, ZoomOut, Rank, Crop } from '@element-plus/icons-vue';
 
 export default {
   components: {
-    ElSelect, 
+    ElSelect,
     ElOption,
     ElButton,
     ElButtonGroup,
@@ -84,8 +104,9 @@ export default {
     RefreshLeft,
     ZoomIn,
     ZoomOut,
-    Rank, 
+    Rank,
     Crop,
+    ElInputNumber,
   },
   data() {
     return {
@@ -107,9 +128,14 @@ export default {
     navigateToResultPage() {
       this.$router.push({ name: 'ResultPage' });
     },
+    triggerFileInput() {
+      // 触发文件输入的点击事件
+      this.$refs.fileInput.click();
+    },
     onSelectFile(event) {
       const file = event.target.files[0];
       if (file) {
+        this.fileName = file.name;
         const reader = new FileReader();
         reader.onload = e => {
           this.$refs.cropperImage.src = e.target.result;
@@ -123,7 +149,7 @@ export default {
         this.cropper.destroy();
       }
       this.cropper = new Cropper(this.$refs.cropperImage, {
-        aspectRatio: 16 / 9,
+        aspectRatio: NaN,
         preview: '.preview-container',
         viewMode: 1,
         autoCropArea: 0.8,
@@ -138,6 +164,7 @@ export default {
     setAspectRatio(ratio) {
       if (this.cropper) {
         this.cropper.setAspectRatio(ratio);
+        this.selectedAspectRatio = ratio;
       }
     },
     rotate(degrees) {
@@ -188,8 +215,8 @@ export default {
 
 <style scoped>
 .title {
-    margin-bottom: 20px;
-    font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
+  margin-bottom: 20px;
+  font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
 }
 
 .textile-image-search {
@@ -205,7 +232,14 @@ export default {
 }
 
 .file-input-container {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
   margin-bottom: 20px;
+}
+
+.el-input {
+  flex-grow: 1;
 }
 
 .cropping-container {
@@ -214,7 +248,8 @@ export default {
   width: 100%;
 }
 
-.cropper-container, .preview-container {
+.cropper-container,
+.preview-container {
   border: 1px solid #ccc;
 }
 
@@ -242,7 +277,7 @@ export default {
 .data-controls {
   display: flex;
   flex-direction: column;
-  bottom: 140px;
+  top: 380px;
   position: absolute;
 }
 
@@ -250,7 +285,12 @@ export default {
   margin-bottom: 10px;
 }
 
-.input-group label, .input-group input {
+.input-group label {
+  font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
+}
+
+.input-group label,
+.input-group input {
   margin-right: 5px;
 }
 
@@ -281,7 +321,8 @@ export default {
 
 .navigation-button button {
   padding: 10px 20px;
-  background-color: #4CAF50; /* 绿色 */
+  background-color: #4CAF50;
+  /* 绿色 */
   color: white;
   border: none;
   border-radius: 4px;
@@ -297,25 +338,12 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 300px; /* 或根据需要调整宽度 */
+  max-width: 300px;
   margin-top: 20px;
 }
 
 .material-select-static {
-  flex-grow: 1; /* 让选择框尽可能填充空间 */
-  margin-right: 20px; /* 在按钮前添加一些间隔 */
-}
-
-.search-button {
-  padding: 10px 20px;
-  background-color: #4CAF50; /* 绿色 */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.search-button:hover {
-  background-color: #45a049;
+  flex-grow: 1;
+  margin-right: 20px;
 }
 </style>
