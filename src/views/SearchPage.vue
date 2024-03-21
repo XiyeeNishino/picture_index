@@ -56,7 +56,7 @@
         </el-button>
       </el-button-group>
       <el-button-group>
-        <el-button type="primary" circle @click="setDragMode('rank')">
+        <el-button type="primary" circle @click="setDragMode('move')">
           <el-icon>
             <rank />
           </el-icon>
@@ -77,8 +77,8 @@
     </div>
     <div class="search-controls">
       <el-select v-model="selectedMaterials" multiple placeholder="请选择材料" class="material-select-static">
-        <el-option label="原色数码布料" value="原色数码布料"></el-option>
-        <el-option label="蕾丝" value="蕾丝"></el-option>
+        <el-option label="原色数码布料" value="1"></el-option>
+        <el-option label="蕾丝" value="2"></el-option>
       </el-select>
       <el-button type="success" @click="navigateToResultPage">检索</el-button>
       <!-- <button @click="navigateToResultPage" class="search-button">检索</button> -->
@@ -126,20 +126,49 @@ export default {
   },
   methods: {
     navigateToResultPage() {
+      this.cropper.getCroppedCanvas().toBlob((blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'cropped.jpg');
+
+        this.selectedMaterials.forEach((materialId, index) => {
+          formData.append(`materialId[${index}]`, materialId.toString());
+        });
+
+        fetch('http://127.0.0.1:5000/search', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log(data);
+            // 根据返回的数据进行处理
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // 处理失败的情况
+          });
+      }, 'image/jpeg');
+
       this.$router.push({ name: 'ResultPage' });
     },
+
     triggerFileInput() {
-      // 触发文件输入的点击事件
       this.$refs.fileInput.click();
     },
+
     onSelectFile(event) {
       const file = event.target.files[0];
       if (file) {
         this.fileName = file.name;
         const reader = new FileReader();
-        reader.onload = e => {
+        reader.onload = (e) => {
+          if (this.cropper) {
+            this.cropper.destroy();
+          }
           this.$refs.cropperImage.src = e.target.result;
-          this.$nextTick(this.initializeCropper);
+          this.$refs.cropperImage.onload = () => {
+            this.initializeCropper();
+          };
         };
         reader.readAsDataURL(file);
       }
@@ -232,9 +261,9 @@ export default {
 }
 
 .file-input-container {
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
