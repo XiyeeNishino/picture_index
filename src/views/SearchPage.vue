@@ -89,7 +89,7 @@
 <script>
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.min.css';
-import { ElSelect, ElOption, ElButton, ElButtonGroup, ElIcon, ElInputNumber } from 'element-plus';
+import { ElSelect, ElOption, ElButton, ElButtonGroup, ElIcon, ElInputNumber, ElNotification } from 'element-plus';
 import 'element-plus/dist/index.css';
 import { RefreshRight, RefreshLeft, ZoomIn, ZoomOut, Rank, Crop } from '@element-plus/icons-vue';
 
@@ -138,18 +138,35 @@ export default {
           method: 'POST',
           body: formData,
         })
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
           .then(data => {
-            console.log(data);
-            // 根据返回的数据进行处理
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            // 处理成功逻辑
+            ElNotification({
+              title: '成功',
+              message: '图片上传并处理成功',
+              type: 'success',
+            });
+
+            this.$router.push({ name: 'ResultPage', query: { plist: JSON.stringify(data.plist), path: data.path } });
           })
           .catch(error => {
             console.error('Error:', error);
-            // 处理失败的情况
+            // 处理失败逻辑
+            ElNotification({
+              title: '失败',
+              message: '图片上传或处理失败: ' + error.message,
+              type: 'error',
+            });
           });
       }, 'image/jpeg');
-
-      this.$router.push({ name: 'ResultPage' });
     },
 
     triggerFileInput() {
