@@ -3,14 +3,12 @@
         <!-- 页面标题 -->
         <h1 class="page-title">纺织/布料图片检索系统</h1>
         <br> <br>
-
         <!-- 上传图片区域 -->
         <div class="upload-container">
-            <div class="file">
-                <input type="file" class="updata" accept="image/*" @change="change($event)" ref="updata">
-                <img :src="imageUrl ? imageUrl : baseImg" alt="" class="img">
+            <a href="/" class="file">
+                <img :src="imageUrl ? imageUrl : pathData" alt="" class="img">
                 <div class="reupload-text">点击重新上传</div>
-            </div>
+            </a>
         </div>
         <div class="black-back">
         </div>
@@ -18,18 +16,11 @@
         <div class="result-container">
             <h2 class="result-title">相似图片</h2>
             <br> <br> <br> <br> <br> <br> <br> <br>
-            <div class="demo-image__lazy" ref="lazyContainer">
-                <a v-for="(url, index) in visibleUrls" :key="index" class="image-wrapper" :href="url" target="_blank">
-                    <img :src="url" class="image-item" />
+            <div class="v-waterfall-content" id="v-waterfall">
+                <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
+                    :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
+                    <img :src="img.src" alt="image" @click="openOriginal(img.src)">
                 </a>
-            </div>
-            <div v-if="loading" class="loading-spinner">
-                <img src="@/assets/loading.gif" alt="Loading..." />
-            </div>
-            <div v-if="allLoaded" class="loading-spinner">
-                <div>
-                    <el-alert title="没有更多搜索结果~" type="info" show-icon center />
-                </div>
             </div>
         </div>
     </div>
@@ -38,14 +29,18 @@
 <script>
 export default {
     data() {
-        const urls = [];
-        for (let i = 0; i < 100; i++) {
-            urls.push(require('@/assets/cxk.png'));
-        }
         return {
+            pathData: '', // 存储 path 数据
+            waterfallList: [],
+            plistData: [],
+            waterfallImgWidth: 250,// 每个盒子的宽度
+            waterfallImgCol: 5,// 瀑布流的列数
+            waterfallImgRight: 10,// 每个盒子的右padding
+            waterfallImgBottom: 10,// 每个盒子的下padding
+            waterfallDeviationHeight: [],
+            imgList: [],
             imageUrl: '',
             baseImg: '',
-            urls,
             loadedCount: 20,
             lazyOffset: 20,
             loading: false,
@@ -53,47 +48,110 @@ export default {
         }
     },
     methods: {
-        change(e) {
-            console.log(e.target.files[0].name);
-            let file = e.target.files[0]
-            var reader = new FileReader()
-            var that = this
-            reader.readAsDataURL(file)
-            reader.onload = e => {
-                console.log('读取成功');
-                that.imageUrl = e.target.result
+        //计算每个图片的宽度或者是列数
+        calculationWidth() {
+            let domWidth = document.getElementById("v-waterfall").offsetWidth;
+            if (!this.waterfallImgWidth && this.waterfallImgCol) {
+                this.waterfallImgWidth = (domWidth - this.waterfallImgRight * this.waterfallImgCol) / this.waterfallImgCol;
+            } else if (this.waterfallImgWidth && !this.waterfallImgCol) {
+                this.waterfallImgCol = Math.floor(domWidth / (this.waterfallImgWidth + this.waterfallImgRight))
             }
-
+            //初始化偏移高度数组
+            this.waterfallDeviationHeight = new Array(this.waterfallImgCol);
+            for (let i = 0; i < this.waterfallDeviationHeight.length; i++) {
+                this.waterfallDeviationHeight[i] = 0;
+            }
+            this.imgPreloading()
         },
-        lazyLoadHandler() {
-            const container = this.$refs.lazyContainer;
-            if (!container) return;
-            const rect = container.getBoundingClientRect();
-            if ((rect.bottom - window.innerHeight) <= 50 && !this.loading) {
-                this.loading = true;
-                setTimeout(() => {
-                    this.loadedCount += this.lazyOffset;
-                    this.loading = false;
-                }, 500);
-                if (this.loadedCount >= this.urls.length) {
-                    this.allLoaded = true;
-                    this.loading = false;
+        //图片预加载
+        imgPreloading() {
+            for (let i = 0; i < this.imgList.length; i++) {
+                let aImg = new Image();
+                aImg.src = this.imgList[i];
+                console.log(aImg);
+                aImg.onload = aImg.onerror = () => {
+                    let imgData = {};
+                    imgData.height = this.waterfallImgWidth / aImg.width * aImg.height;
+                    imgData.src = this.imgList[i];
+                    this.waterfallList.push(imgData);
+                    console.log(this.waterfallList);
+                    this.rankImg(imgData);
                 }
             }
+        },
+        //瀑布流布局
+        rankImg(imgData) {
+            let {
+                waterfallImgWidth,
+                waterfallImgRight,
+                waterfallImgBottom,
+                waterfallDeviationHeight,
+            } = this;
+            let minIndex = this.filterMin();
+            imgData.top = waterfallDeviationHeight[minIndex];
+            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 60;
+            waterfallDeviationHeight[minIndex] += imgData.height + waterfallImgBottom;
+            console.log(imgData);
+        },
+        /**
+         * 找到最短的列并返回下标
+         * @returns {number} 下标
+         */
+        filterMin() {
+            const min = Math.min.apply(null, this.waterfallDeviationHeight);
+            return this.waterfallDeviationHeight.indexOf(min);
+        },
+        openOriginal(imageUrl) {
+            window.open(imageUrl, '_blank');
+        },
+        fetchImage() {
+            fetch(this.pathData, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'image/jpg'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(arrayBuffer => {
+                    const binaryImageData = new Uint8Array(arrayBuffer);
+                    const base64ImageData = this.arrayBufferToBase64(binaryImageData);
+                    this.imageUrl = `data:image/jpeg;base64,${base64ImageData}`;
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        },
+        arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
         }
     },
     created() {
-        this.baseImg = require('@/assets/cxk.png')
+        this.pathData = this.$route.query.path;
+        this.pathData = "http://127.0.0.1:5000//statics/upload/" + this.pathData;
+        this.fetchImage();
+        console.log(this.pathData);
+        this.plistData = JSON.parse(this.$route.query.plist);
+        for (let i = 0; i < this.plistData.length; i++) {
+            this.imgList.push("http://127.0.0.1:5000//statics/index/" + this.plistData[i]);
+        }
     },
     computed: {
-        visibleUrls() {
-            return this.urls.slice(0, this.loadedCount);
-        },
     },
     mounted() {
         this.$nextTick(() => {
             window.addEventListener('scroll', this.lazyLoadHandler);
         });
+        this.calculationWidth();
     },
     unmounted() {
         window.removeEventListener('scroll', this.lazyLoadHandler);
@@ -104,7 +162,6 @@ export default {
 <style>
 .loading-spinner {
     text-align: center;
-    margin-top: 20px;
 }
 
 .loading-spinner img {
@@ -188,29 +245,34 @@ export default {
     height: 150px;
 }
 
-.demo-image__lazy {
-    display: flex;
-    flex-wrap: wrap;
+.v-waterfall-content {
+    /* 主要 */
     width: 100%;
+    position: relative;
 }
 
-.image-wrapper {
-    display: inline-block;
-    position: relative;
-    overflow: hidden;
+.v-waterfall-item {
+    /* 主要 */
+    float: left;
+    position: absolute;
+    margin-left: 60px;
+}
+
+.v-waterfall-item img {
+    /* 主要 */
+    /* width: auto;height: auto; */
+    width: 100%;
+    height: auto;
+    /* 次要 */
     border: 2px solid #ddd;
     border-radius: 10px;
-    margin-left: 60px;
-    margin-bottom: 10px;
-}
-
-.image-item {
-    display: block;
-    width: 250px;
     transition: transform 0.3s ease;
 }
 
-.image-wrapper:hover .image-item {
+.v-waterfall-item img:hover {
     transform: scale(1.05);
+    /* 鼠标悬停时放大 */
+    cursor: pointer;
+    /* 鼠标形状变为手指 */
 }
 </style>
