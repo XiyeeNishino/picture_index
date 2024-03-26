@@ -76,12 +76,15 @@
       </el-button-group>
     </div>
     <div class="search-controls">
-      <el-select v-model="selectedMaterials" multiple placeholder="请选择材料" class="material-select-static">
+      <el-select v-model="selectedMaterials" multiple placeholder="请选择检索数据库" class="material-select-static">
         <el-option label="原色数码布料" value="1"></el-option>
         <el-option label="蕾丝" value="2"></el-option>
       </el-select>
       <el-button type="success" @click="navigateToResultPage">检索</el-button>
       <!-- <button @click="navigateToResultPage" class="search-button">检索</button> -->
+    </div>
+    <div v-if="isSearching" class="searching-container">
+      正在检索中<span class="dots">{{ dots }}</span>
     </div>
   </div>
 </template>
@@ -121,11 +124,17 @@ export default {
         scaleY: 1,
       },
       updatingCropData: false,
-      selectedMaterials: [],
+      selectedMaterials: ["1"],
+      isSearching: false,
+      dots: '',
+      searchIntervalId: null,
     };
   },
   methods: {
     navigateToResultPage() {
+      this.isSearching = true;
+      this.updateSearchMessage(); 
+
       this.cropper.getCroppedCanvas().toBlob((blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'cropped.jpg');
@@ -138,28 +147,25 @@ export default {
           method: 'POST',
           body: formData,
         })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
+          .then(response => response.json())
           .then(data => {
             if (data.error) {
               throw new Error(data.error);
             }
-            // 处理成功逻辑
-            ElNotification({
-              title: '成功',
-              message: '图片上传并处理成功',
-              type: 'success',
+            this.clearSearchMessageInterval();
+            this.isSearching = false;
+            // 更新Vuex store的状态
+            this.$store.commit('updateData', {
+              plist: data.plist,
+              path: data.path,
             });
 
-            this.$router.push({ name: 'ResultPage', query: { plist: JSON.stringify(data.plist), path: data.path } });
+            this.$router.push({ name: 'ResultPage' });
           })
           .catch(error => {
             console.error('Error:', error);
-            // 处理失败逻辑
+            this.clearSearchMessageInterval();
+            this.isSearching = false;
             ElNotification({
               title: '失败',
               message: '图片上传或处理失败: ' + error.message,
@@ -167,6 +173,21 @@ export default {
             });
           });
       }, 'image/jpeg');
+    },
+    updateSearchMessage() {
+      let dotCount = 0;
+      this.dots = '';
+      this.searchIntervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        this.dots = '.'.repeat(dotCount);
+      }, 500);
+    },
+    clearSearchMessageInterval() {
+      if (this.searchIntervalId) {
+        clearInterval(this.searchIntervalId);
+        this.dots = '';
+        this.isSearching = false;
+      }
     },
 
     triggerFileInput() {
@@ -323,21 +344,25 @@ export default {
 .data-controls {
   display: flex;
   flex-direction: column;
-  top: 380px;
+  top: 376px;
   position: absolute;
 }
 
 .input-group {
+  display: flex;
+  align-items: center;
   margin-bottom: 10px;
 }
 
 .input-group label {
   font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
+  width: 55px;
+  text-align: right;
+  margin-right: 10px; 
 }
 
-.input-group label,
-.input-group input {
-  margin-right: 5px;
+.input-group .el-input-number {
+  flex-grow: 1;
 }
 
 .action-buttons {
@@ -368,7 +393,6 @@ export default {
 .navigation-button button {
   padding: 10px 20px;
   background-color: #4CAF50;
-  /* 绿色 */
   color: white;
   border: none;
   border-radius: 4px;
@@ -391,5 +415,11 @@ export default {
 .material-select-static {
   flex-grow: 1;
   margin-right: 20px;
+}
+
+.searching-container {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
 }
 </style>

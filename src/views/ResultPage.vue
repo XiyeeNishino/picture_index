@@ -16,27 +16,38 @@
         <div class="result-container">
             <h2 class="result-title">相似图片</h2>
             <br> <br> <br> <br> <br> <br> <br> <br>
-            <div class="v-waterfall-content" id="v-waterfall">
-                <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
-                    :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
-                    <img :src="img.src" alt="image" @click="openOriginal(img.src)">
-                </a>
+            <div style="display: flex; justify-content: space-between;">
+                <!-- 右侧部分 -->
+                <div style="flex: 1.4;"></div>
+                <div style="flex: 7.6;">
+                    <div>
+                        <div class="v-waterfall-content" id="v-waterfall">
+                            <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
+                                :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
+                                <img :src="img.src" alt="image" @click="openOriginal(img.src)">
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
 </template>
 
 <script>
+import { mapState } from 'vuex';
+
 export default {
     data() {
         return {
-            pathData: '', // 存储 path 数据
+            pathData: '',
             waterfallList: [],
             plistData: [],
-            waterfallImgWidth: 250,// 每个盒子的宽度
-            waterfallImgCol: 5,// 瀑布流的列数
-            waterfallImgRight: 10,// 每个盒子的右padding
-            waterfallImgBottom: 10,// 每个盒子的下padding
+            waterfallImgWidth: 250,
+            waterfallImgCol: 5,
+            waterfallImgRight: 10,
+            waterfallImgBottom: 10,
             waterfallDeviationHeight: [],
             imgList: [],
             imageUrl: '',
@@ -48,7 +59,6 @@ export default {
         }
     },
     methods: {
-        //计算每个图片的宽度或者是列数
         calculationWidth() {
             let domWidth = document.getElementById("v-waterfall").offsetWidth;
             if (!this.waterfallImgWidth && this.waterfallImgCol) {
@@ -56,14 +66,12 @@ export default {
             } else if (this.waterfallImgWidth && !this.waterfallImgCol) {
                 this.waterfallImgCol = Math.floor(domWidth / (this.waterfallImgWidth + this.waterfallImgRight))
             }
-            //初始化偏移高度数组
             this.waterfallDeviationHeight = new Array(this.waterfallImgCol);
             for (let i = 0; i < this.waterfallDeviationHeight.length; i++) {
                 this.waterfallDeviationHeight[i] = 0;
             }
             this.imgPreloading()
         },
-        //图片预加载
         imgPreloading() {
             for (let i = 0; i < this.imgList.length; i++) {
                 let aImg = new Image();
@@ -79,7 +87,6 @@ export default {
                 }
             }
         },
-        //瀑布流布局
         rankImg(imgData) {
             let {
                 waterfallImgWidth,
@@ -89,14 +96,10 @@ export default {
             } = this;
             let minIndex = this.filterMin();
             imgData.top = waterfallDeviationHeight[minIndex];
-            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 60;
+            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 15;
             waterfallDeviationHeight[minIndex] += imgData.height + waterfallImgBottom;
             console.log(imgData);
         },
-        /**
-         * 找到最短的列并返回下标
-         * @returns {number} 下标
-         */
         filterMin() {
             const min = Math.min.apply(null, this.waterfallDeviationHeight);
             return this.waterfallDeviationHeight.indexOf(min);
@@ -133,19 +136,26 @@ export default {
                 binary += String.fromCharCode(bytes[i]);
             }
             return window.btoa(binary);
-        }
+        },
+        receiveAndStoreData() {
+            // 接收数据并存储到本地数据中
+            this.plistData = this.plist;
+            this.pathData = this.path;
+        },
     },
     created() {
-        this.pathData = this.$route.query.path;
+        this.receiveAndStoreData();
+        console.log(this.plistData);
+        console.log(this.pathData);
         this.pathData = "http://127.0.0.1:5000//statics/upload/" + this.pathData;
         this.fetchImage();
         console.log(this.pathData);
-        this.plistData = JSON.parse(this.$route.query.plist);
         for (let i = 0; i < this.plistData.length; i++) {
             this.imgList.push("http://127.0.0.1:5000//statics/index/" + this.plistData[i]);
         }
     },
     computed: {
+        ...mapState(['plist', 'path']),
     },
     mounted() {
         this.$nextTick(() => {
@@ -185,7 +195,6 @@ export default {
 .black-back {
     background-color: #000;
     padding: 80px;
-    position: relative;
 }
 
 .result-title {
@@ -246,24 +255,17 @@ export default {
 }
 
 .v-waterfall-content {
-    /* 主要 */
     width: 100%;
     position: relative;
 }
 
 .v-waterfall-item {
-    /* 主要 */
-    float: left;
     position: absolute;
-    margin-left: 60px;
 }
 
 .v-waterfall-item img {
-    /* 主要 */
-    /* width: auto;height: auto; */
-    width: 100%;
+    width: 102%;
     height: auto;
-    /* 次要 */
     border: 2px solid #ddd;
     border-radius: 10px;
     transition: transform 0.3s ease;
@@ -271,8 +273,6 @@ export default {
 
 .v-waterfall-item img:hover {
     transform: scale(1.05);
-    /* 鼠标悬停时放大 */
     cursor: pointer;
-    /* 鼠标形状变为手指 */
 }
 </style>
