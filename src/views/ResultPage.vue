@@ -16,18 +16,13 @@
         <div class="result-container">
             <h2 class="result-title">相似图片</h2>
             <br> <br> <br> <br> <br> <br> <br> <br>
-            <div style="display: flex; justify-content: space-between;">
-                <!-- 右侧部分 -->
-                <div>
-                    <div class="v-waterfall-content" id="v-waterfall">
-                        <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
-                            :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
-                            <img :src="img.src" alt="image" @click="openOriginal(img.src)">
-                        </a>
+            <div class="masonry">
+                <a v-for="(img, index) in imgList" :key="index">
+                    <div class="item" id="v-waterfall">
+                        <img :src="img" alt="image" @click="openOriginal(img)">
                     </div>
-                </div>
+                </a>
             </div>
-
         </div>
     </div>
 </template>
@@ -39,68 +34,15 @@ export default {
     data() {
         return {
             pathData: '',
-            waterfallList: [],
             plistData: [],
-            waterfallImgWidth: 250,
-            waterfallImgCol: 5,
-            waterfallImgRight: 10,
-            waterfallImgBottom: 10,
-            waterfallDeviationHeight: [],
             imgList: [],
             imageUrl: '',
             baseImg: '',
-            loadedCount: 20,
-            lazyOffset: 20,
             loading: false,
             allLoaded: false
         }
     },
     methods: {
-        calculationWidth() {
-            let domWidth = document.getElementById("v-waterfall").offsetWidth;
-            if (!this.waterfallImgWidth && this.waterfallImgCol) {
-                this.waterfallImgWidth = (domWidth - this.waterfallImgRight * this.waterfallImgCol) / this.waterfallImgCol;
-            } else if (this.waterfallImgWidth && !this.waterfallImgCol) {
-                this.waterfallImgCol = Math.floor(domWidth / (this.waterfallImgWidth + this.waterfallImgRight))
-            }
-            this.waterfallDeviationHeight = new Array(this.waterfallImgCol);
-            for (let i = 0; i < this.waterfallDeviationHeight.length; i++) {
-                this.waterfallDeviationHeight[i] = 0;
-            }
-            this.imgPreloading()
-        },
-        imgPreloading() {
-            for (let i = 0; i < this.imgList.length; i++) {
-                let aImg = new Image();
-                aImg.src = this.imgList[i];
-                console.log(aImg);
-                aImg.onload = aImg.onerror = () => {
-                    let imgData = {};
-                    imgData.height = this.waterfallImgWidth / aImg.width * aImg.height;
-                    imgData.src = this.imgList[i];
-                    this.waterfallList.push(imgData);
-                    console.log(this.waterfallList);
-                    this.rankImg(imgData);
-                }
-            }
-        },
-        rankImg(imgData) {
-            let {
-                waterfallImgWidth,
-                waterfallImgRight,
-                waterfallImgBottom,
-                waterfallDeviationHeight,
-            } = this;
-            let minIndex = this.filterMin();
-            imgData.top = waterfallDeviationHeight[minIndex];
-            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 15 + window.innerWidth * 0.1;
-            waterfallDeviationHeight[minIndex] += imgData.height + waterfallImgBottom;
-            console.log(imgData);
-        },
-        filterMin() {
-            const min = Math.min.apply(null, this.waterfallDeviationHeight);
-            return this.waterfallDeviationHeight.indexOf(min);
-        },
         openOriginal(imageUrl) {
             window.open(imageUrl, '_blank');
         },
@@ -150,23 +92,45 @@ export default {
         for (let i = 0; i < this.plistData.length; i++) {
             this.imgList.push("http://127.0.0.1:5000//statics/index/" + this.plistData[i]);
         }
+        console.log(this.imgList);
     },
     computed: {
         ...mapState(['plist', 'path']),
     },
     mounted() {
-        this.$nextTick(() => {
-            window.addEventListener('scroll', this.lazyLoadHandler);
-        });
-        this.calculationWidth();
     },
     unmounted() {
-        window.removeEventListener('scroll', this.lazyLoadHandler);
     },
 }
 </script>
 
 <style>
+.masonry {
+    width: 90%;
+    margin: 20px auto;
+    columns: 5;
+    column-gap: 30px;
+}
+
+.item {
+    width: 100%;
+    break-inside: avoid;
+    margin-bottom: 30px;
+}
+
+.item img {
+    width: 102%;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.item img:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
 body {
     overflow-x: hidden;
 }
@@ -250,27 +214,5 @@ body {
     left: 0;
     width: 150px;
     height: 150px;
-}
-
-.v-waterfall-content {
-    width: 100%;
-    position: relative;
-}
-
-.v-waterfall-item {
-    position: absolute;
-}
-
-.v-waterfall-item img {
-    width: 102%;
-    height: auto;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    transition: transform 0.3s ease;
-}
-
-.v-waterfall-item img:hover {
-    transform: scale(1.05);
-    cursor: pointer;
 }
 </style>
