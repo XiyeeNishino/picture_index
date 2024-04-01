@@ -18,15 +18,12 @@
             <br> <br> <br> <br> <br> <br> <br> <br>
             <div style="display: flex; justify-content: space-between;">
                 <!-- 右侧部分 -->
-                <div style="flex: 1.4;"></div>
-                <div style="flex: 7.6;">
-                    <div>
-                        <div class="v-waterfall-content" id="v-waterfall">
-                            <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
-                                :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
-                                <img :src="img.src" alt="image" @click="openOriginal(img.src)">
-                            </a>
-                        </div>
+                <div>
+                    <div class="v-waterfall-content" id="v-waterfall">
+                        <a v-for="(img, index) in waterfallList" :key="index" class="v-waterfall-item"
+                            :style="{ top: img.top + 'px', left: img.left + 'px', width: waterfallImgWidth + 'px', height: img.height }">
+                            <img :src="img.src" alt="image" @click="openOriginal(img.src)">
+                        </a>
                     </div>
                 </div>
             </div>
@@ -96,7 +93,7 @@ export default {
             } = this;
             let minIndex = this.filterMin();
             imgData.top = waterfallDeviationHeight[minIndex];
-            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 15;
+            imgData.left = minIndex * (waterfallImgRight + waterfallImgWidth) + minIndex * 15 + window.innerWidth * 0.1;
             waterfallDeviationHeight[minIndex] += imgData.height + waterfallImgBottom;
             console.log(imgData);
         },
@@ -170,8 +167,8 @@ export default {
 </script>
 
 <style>
-.loading-spinner {
-    text-align: center;
+body {
+    overflow-x: hidden;
 }
 
 .loading-spinner img {
@@ -195,6 +192,7 @@ export default {
 .black-back {
     background-color: #000;
     padding: 80px;
+    width: 100%;
 }
 
 .result-title {
