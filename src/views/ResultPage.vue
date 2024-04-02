@@ -13,16 +13,23 @@
         <div class="black-back">
         </div>
         <!-- 检索结果展示 -->
-        <div class="result-container">
-            <h2 class="result-title">相似图片</h2>
-            <br> <br> <br> <br> <br> <br> <br> <br>
-            <div class="masonry">
-                <a v-for="(img, index) in imgList" :key="index">
-                    <div class="item" id="v-waterfall">
-                        <img :src="img" alt="image" @click="openOriginal(img)">
-                    </div>
-                </a>
-            </div>
+        <h2 class="result-title">&nbsp;&nbsp;&nbsp;&nbsp;相似图片</h2>
+        <br> <br> <br> <br> <br> <br> <br> <br>
+        <div class="waterfall wf-wrap" ref="waterfall">
+            <ul>
+                <transition-group name="list" tag="li">
+                    <li v-for="(item, index) in waterfallList" :key="index" class="wf-item" :style="{
+                    top: item.top + 'px',
+                    left: item.left + 'px',
+                    width: item.width + 'px',
+                    height: item.height + 'px',
+                }">
+                        <div class="v-waterfall-item">
+                            <img :src="item.src" @click="openOriginal(item.src)" />
+                        </div>
+                    </li>
+                </transition-group>
+            </ul>
         </div>
     </div>
 </template>
@@ -33,18 +40,100 @@ import { mapState } from 'vuex';
 export default {
     data() {
         return {
-            pathData: '',
             plistData: [],
-            imgList: [],
-            imageUrl: '',
-            baseImg: '',
-            loading: false,
-            allLoaded: false
+            pathData: '',
+            images: [],
+            waterfallList: [],
+            waterfallCol: 5,
+            colWidth: 350,
+            marginRight: 10,
+            marginBottom: 10,
+            colHeights: [],
+            apiIndex: 1,
+            imageBatchSize: 100,  // 每批加载的图片数量
+            imagesLoaded: 0,
         }
     },
     methods: {
+        receiveAndStoreData() {
+            // 接收数据并存储到本地数据中
+            this.plistData = this.plist;
+            this.pathData = this.path;
+        },
+        init() {
+            this.colHeights = new Array(this.waterfallCol)
+            for (let i = 0; i < this.colHeights.length; i++) {
+                this.colHeights[i] = 0
+            }
+            this.colWidth =
+                (this.$refs.waterfall.clientWidth -
+                    (this.waterfallCol - 1) * this.marginRight) /
+                this.waterfallCol
+            this.loadImgs(this.apiIndex)
+        },
+        loadImgs() {
+            let promiseAll = [],
+                imgs = [],
+                start = this.imagesLoaded,
+                end = Math.min(this.imagesLoaded + this.imageBatchSize, this.images.length);
+            this.imagesLoaded = end;
+
+            for (let i = start; i < end; i++) {
+                promiseAll.push(new Promise(resolve => {
+                    imgs[i] = new Image();
+                    imgs[i].src = this.images[i];
+                    imgs[i].onload = () => {
+                        let imgData = {
+                            height: (imgs[i].height * this.colWidth) / imgs[i].width,
+                            width: this.colWidth,
+                            src: this.images[i]
+                        };
+                        this.waterfallList.push(imgData);
+                        this.rankImgs(imgData);
+                        resolve(imgs[i]);
+                    };
+                }));
+            }
+
+            Promise.all(promiseAll).then(() => {
+                this.observe();
+            });
+        },
+        observe() {
+            let imgs = document.getElementsByClassName('wf-item');
+            if (imgs.length === 0) return;
+
+            let index = Math.max(0, imgs.length - 1);
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        observer.unobserve(entry.target);
+                        if (this.imagesLoaded < this.images.length) {
+                            this.loadImgs(this.apiIndex);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '0px',
+                threshold: 0.1
+            });
+            observer.observe(imgs[index]);
+        },
         openOriginal(imageUrl) {
             window.open(imageUrl, '_blank');
+        },
+        rankImgs(imgData) {
+            let min = this.filterMin()
+            imgData.top = min.minHeight
+            imgData.left = min.minIndex * (this.colWidth + this.marginRight)
+            this.colHeights[min.minIndex] += imgData.height + this.marginBottom
+        },
+        filterMin() {
+            let minHeight = Math.min.apply(null, this.colHeights)
+            return {
+                minHeight: minHeight,
+                minIndex: this.colHeights.indexOf(minHeight)
+            }
         },
         fetchImage() {
             fetch(this.pathData, {
@@ -76,11 +165,6 @@ export default {
             }
             return window.btoa(binary);
         },
-        receiveAndStoreData() {
-            // 接收数据并存储到本地数据中
-            this.plistData = this.plist;
-            this.pathData = this.path;
-        },
     },
     created() {
         this.receiveAndStoreData();
@@ -90,14 +174,14 @@ export default {
         this.fetchImage();
         console.log(this.pathData);
         for (let i = 0; i < this.plistData.length; i++) {
-            this.imgList.push("http://127.0.0.1:5000//statics/index/" + this.plistData[i]);
+            this.images.push("http://127.0.0.1:5000//statics/index/" + this.plistData[i]);
         }
-        console.log(this.imgList);
     },
     computed: {
         ...mapState(['plist', 'path']),
     },
     mounted() {
+        this.init()
     },
     unmounted() {
     },
@@ -105,39 +189,9 @@ export default {
 </script>
 
 <style>
-.masonry {
-    width: 90%;
-    margin: 20px auto;
-    columns: 5;
-    column-gap: 30px;
-}
-
-.item {
-    width: 100%;
-    break-inside: avoid;
-    margin-bottom: 30px;
-}
-
-.item img {
-    width: 102%;
-    height: auto;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    transition: transform 0.3s ease;
-}
-
-.item img:hover {
-    transform: scale(1.05);
-    cursor: pointer;
-}
-
 body {
+    margin-left: -10px;
     overflow-x: hidden;
-}
-
-.loading-spinner img {
-    width: 50px;
-    height: 50px;
 }
 
 .search-result {
@@ -195,7 +249,6 @@ body {
     align-items: center;
 }
 
-
 .updata {
     display: block;
     height: 100%;
@@ -214,5 +267,46 @@ body {
     left: 0;
     width: 150px;
     height: 150px;
+}
+
+ul li {
+    list-style: none;
+}
+
+.wf-wrap {
+    position: relative;
+    width: 1500px;
+    margin: 0 auto;
+}
+
+.wf-item {
+    position: absolute;
+    height: 100%;
+}
+
+.wf-item img {
+    width: 100%;
+}
+
+.list-enter-active,
+.list-leave-active {
+    transition: all 1s;
+}
+
+.list-enter,
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+.v-waterfall-item img {
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.v-waterfall-item img:hover {
+    transform: scale(1.05);
+    cursor: pointer;
 }
 </style>
