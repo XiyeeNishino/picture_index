@@ -1,16 +1,28 @@
 import { createStore } from 'vuex';
 
 export default createStore({
-  state() {
-    return {
-      plist: [],
-      path: '',
-    };
+  state: {
+    plist: [],
+    path: '',
+    imageDataUrl: null,
+    cropData: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      rotate: 0,
+    },
   },
   mutations: {
-    updateData(state, { plist, path }) {
-      state.plist = plist;
-      state.path = path;
+    setImageDataUrl(state, dataUrl) {
+      state.imageDataUrl = dataUrl;
+    },
+    updateData(state, payload) {
+      state.plist = payload.plist;
+      state.path = payload.path;
+    },
+    setCropData(state, cropData) {
+      state.cropData = cropData;
     },
   },
 });

@@ -133,11 +133,14 @@ export default {
   methods: {
     navigateToResultPage() {
       this.isSearching = true;
-      this.updateSearchMessage(); 
+      this.updateSearchMessage();
 
       this.cropper.getCroppedCanvas().toBlob((blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'cropped.jpg');
+
+        const cropData = this.cropper.getData();
+        this.$store.commit('setCropData', cropData);
 
         this.selectedMaterials.forEach((materialId, index) => {
           formData.append(`materialId[${index}]`, materialId.toString());
@@ -178,7 +181,7 @@ export default {
       let dotCount = 0;
       this.dots = '';
       this.searchIntervalId = setInterval(() => {
-        dotCount = (dotCount + 1) % 4; 
+        dotCount = (dotCount + 1) % 4;
         this.dots = '.'.repeat(dotCount);
       }, 500);
     },
@@ -200,6 +203,8 @@ export default {
         this.fileName = file.name;
         const reader = new FileReader();
         reader.onload = (e) => {
+          this.$store.commit('setImageDataUrl', e.target.result);
+
           if (this.cropper) {
             this.cropper.destroy();
           }
@@ -271,6 +276,21 @@ export default {
       deep: true,
       immediate: true
     },
+  },
+  mounted() {
+    const imageDataUrl = this.$store.state.imageDataUrl;
+    const cropData = this.$store.state.cropData;
+    if (imageDataUrl) {
+      this.$nextTick(() => {
+        this.$refs.cropperImage.src = imageDataUrl;
+        this.$refs.cropperImage.onload = () => {
+          this.initializeCropper();
+          if (cropData.width && cropData.height) {
+            this.cropper.setData(cropData);
+          }
+        };
+      });
+    }
   },
   beforeUnmount() {
     if (this.cropper) {
@@ -358,7 +378,7 @@ export default {
   font-family: "微软雅黑", "Microsoft YaHei", Arial, sans-serif;
   width: 55px;
   text-align: right;
-  margin-right: 10px; 
+  margin-right: 10px;
 }
 
 .input-group .el-input-number {
