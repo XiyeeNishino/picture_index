@@ -132,7 +132,18 @@ export default {
   },
   methods: {
     navigateToResultPage() {
+
+      if (!this.$store.state.imageDataUrl) {
+        ElNotification({
+          title: '警告',
+          message: '请先上传图片再进行检索',
+          type: 'warning',
+        });
+        return;
+      }
+
       this.isSearching = true;
+      this.$store.commit('setFromResultPage', true);
       this.updateSearchMessage();
 
       this.cropper.getCroppedCanvas().toBlob((blob) => {
@@ -201,6 +212,7 @@ export default {
       const file = event.target.files[0];
       if (file) {
         this.fileName = file.name;
+        this.$store.commit('setFileName', file.name);
         const reader = new FileReader();
         reader.onload = (e) => {
           this.$store.commit('setImageDataUrl', e.target.result);
@@ -229,6 +241,13 @@ export default {
         crop: () => {
           if (!this.updatingCropData) {
             this.cropData = this.cropper.getData();
+          }
+        },
+        ready: () => {
+          const fromResultPage = this.$store.state.fromResultPage;
+          const storedCropData = this.$store.state.cropData;
+          if (fromResultPage && storedCropData && storedCropData.width > 0 && storedCropData.height > 0) {
+            this.cropper.setData(storedCropData);
           }
         },
       });
@@ -278,21 +297,22 @@ export default {
     },
   },
   mounted() {
+    const fromResultPage = this.$store.state.fromResultPage;
     const imageDataUrl = this.$store.state.imageDataUrl;
-    const cropData = this.$store.state.cropData;
-    if (imageDataUrl) {
+    if (fromResultPage && imageDataUrl) {
       this.$nextTick(() => {
         this.$refs.cropperImage.src = imageDataUrl;
         this.$refs.cropperImage.onload = () => {
           this.initializeCropper();
-          if (cropData.width && cropData.height) {
-            this.cropper.setData(cropData);
-          }
+          this.fileName = this.$store.state.filename;
         };
       });
+    } else {
+      this.initializeCropper();
     }
   },
   beforeUnmount() {
+    this.$store.commit('setFromResultPage', false);
     if (this.cropper) {
       this.cropper.destroy();
     }

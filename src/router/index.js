@@ -1,6 +1,7 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import SearchPage from '../views/SearchPage.vue'
-import ResultPage from '../views/ResultPage.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import SearchPage from '../views/SearchPage.vue';
+import ResultPage from '../views/ResultPage.vue';
+import store from '../store';  // 确保正确导入了Vuex store
 
 const routes = [
     {
@@ -13,11 +14,21 @@ const routes = [
         name: 'ResultPage',
         component: ResultPage
     }
-]
+];
 
 const router = createRouter({
     history: createWebHistory(),
     routes
-})
+});
 
-export default router
+router.beforeEach((to, from, next) => {
+    // 检查是否从结果页面返回到搜索页面
+    if (from.name === 'ResultPage' && to.name === 'home') {
+        store.commit('setFromResultPage', true);
+    } else {
+        store.commit('setFromResultPage', false);
+    }
+    next();
+});
+
+export default router;

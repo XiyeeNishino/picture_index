@@ -1,28 +1,42 @@
 import { createStore } from 'vuex';
 
 export default createStore({
-  state: {
-    plist: [],
-    path: '',
-    imageDataUrl: null,
-    cropData: {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      rotate: 0,
-    },
+  state() {
+    return {
+      plist: JSON.parse(sessionStorage.getItem('plist')) || [],
+      path: sessionStorage.getItem('path') || '',
+      cropData: {
+        x: 0,
+        y: 0,
+        width: 230,
+        height: 163,
+        rotate: 0,
+      },
+      imageDataUrl: null,
+      fromResultPage: true,
+      filename: null,
+    };
   },
   mutations: {
-    setImageDataUrl(state, dataUrl) {
-      state.imageDataUrl = dataUrl;
-    },
-    updateData(state, payload) {
-      state.plist = payload.plist;
-      state.path = payload.path;
+    updateData(state, { plist, path }) {
+      state.plist = plist;
+      state.path = path;
+      sessionStorage.setItem('plist', JSON.stringify(plist));
+      sessionStorage.setItem('path', path);
     },
     setCropData(state, cropData) {
       state.cropData = cropData;
+      sessionStorage.setItem('cropData', JSON.stringify(cropData));
     },
+    setImageDataUrl(state, dataUrl) {
+      state.imageDataUrl = dataUrl;
+      sessionStorage.setItem('imageDataUrl', dataUrl);
+    },
+    setFromResultPage(state, value) {
+      state.fromResultPage = value;
+    },
+    setFileName(state, fileName) {
+      state.filename = fileName;
+    }
   },
 });

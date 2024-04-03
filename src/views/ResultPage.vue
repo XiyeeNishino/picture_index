@@ -1,37 +1,41 @@
 <template>
-    <div class="search-result">
-        <!-- 页面标题 -->
-        <h1 class="page-title">纺织/布料图片检索系统</h1>
-        <br> <br>
-        <!-- 上传图片区域 -->
-        <div class="upload-container">
-            <a href="/" class="file">
-                <img :src="imageUrl ? imageUrl : pathData" alt="" class="img">
-                <div class="reupload-text">点击重新上传</div>
-            </a>
+
+    <body>
+        <div class="search-result">
+            <!-- 页面标题 -->
+            <h1 class="page-title">纺织/布料图片检索系统</h1>
+            <br> <br>
+            <!-- 上传图片区域 -->
+            <div class="upload-container">
+                <router-link to="/" class="file">
+                    <img :src="imageUrl ? imageUrl : pathData" alt="" class="img">
+                    <div class="reupload-text">点击重新上传</div>
+                </router-link>
+            </div>
+
+            <div class="black-back">
+            </div>
+            <!-- 检索结果展示 -->
+            <h2 class="result-title">&nbsp;&nbsp;&nbsp;&nbsp;相似图片</h2>
+            <br> <br> <br> <br> <br> <br> <br> <br>
+            <div class="waterfall wf-wrap" ref="waterfall">
+                <ul>
+                    <transition-group name="list" tag="li">
+                        <li v-for="(item, index) in waterfallList" :key="index" class="wf-item" :style="{
+                        top: item.top + 'px',
+                        left: item.left + 'px',
+                        width: item.width + 'px',
+                        height: item.height + 'px',
+                    }">
+                            <div class="v-waterfall-item">
+                                <img :src="item.src" @click="openOriginal(item.src)" />
+                            </div>
+                        </li>
+                    </transition-group>
+                </ul>
+            </div>
         </div>
-        <div class="black-back">
-        </div>
-        <!-- 检索结果展示 -->
-        <h2 class="result-title">&nbsp;&nbsp;&nbsp;&nbsp;相似图片</h2>
-        <br> <br> <br> <br> <br> <br> <br> <br>
-        <div class="waterfall wf-wrap" ref="waterfall">
-            <ul>
-                <transition-group name="list" tag="li">
-                    <li v-for="(item, index) in waterfallList" :key="index" class="wf-item" :style="{
-                    top: item.top + 'px',
-                    left: item.left + 'px',
-                    width: item.width + 'px',
-                    height: item.height + 'px',
-                }">
-                        <div class="v-waterfall-item">
-                            <img :src="item.src" @click="openOriginal(item.src)" />
-                        </div>
-                    </li>
-                </transition-group>
-            </ul>
-        </div>
-    </div>
+    </body>
 </template>
 
 <script>
@@ -55,6 +59,9 @@ export default {
         }
     },
     methods: {
+        handleScroll() {
+            this.$refs.scrollContainer.scrollLeft = 0;
+        },
         receiveAndStoreData() {
             // 接收数据并存储到本地数据中
             this.plistData = this.plist;
@@ -190,12 +197,14 @@ export default {
 
 <style>
 body {
-    margin-left: -10px;
+    margin: 0;
     overflow-x: hidden;
+    height: 100vh;
 }
 
 .search-result {
     text-align: center;
+    position: sticky;
 }
 
 .page-title {
