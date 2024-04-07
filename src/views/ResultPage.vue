@@ -1,41 +1,35 @@
 <template>
-
-    <body>
-        <div class="search-result">
-            <!-- 页面标题 -->
-            <h1 class="page-title">纺织/布料图片检索系统</h1>
-            <br> <br>
-            <!-- 上传图片区域 -->
-            <div class="upload-container">
-                <router-link to="/" class="file">
-                    <img :src="imageUrl ? imageUrl : pathData" alt="" class="img">
-                    <div class="reupload-text">点击重新上传</div>
-                </router-link>
-            </div>
-
-            <div class="black-back">
-            </div>
-            <!-- 检索结果展示 -->
-            <h2 class="result-title">&nbsp;&nbsp;&nbsp;&nbsp;相似图片</h2>
-            <br> <br> <br> <br> <br> <br> <br> <br>
-            <div class="waterfall wf-wrap" ref="waterfall">
-                <ul>
-                    <transition-group name="list" tag="li">
-                        <li v-for="(item, index) in waterfallList" :key="index" class="wf-item" :style="{
-                        top: item.top + 'px',
-                        left: item.left + 'px',
-                        width: item.width + 'px',
-                        height: item.height + 'px',
-                    }">
-                            <div class="v-waterfall-item">
-                                <img :src="item.src" @click="openOriginal(item.src)" />
-                            </div>
-                        </li>
-                    </transition-group>
-                </ul>
-            </div>
+    <div class="search-result">
+        <!-- 页面标题 -->
+        <h1 class="page-title">纺织/布料图片检索系统</h1>
+        <!-- 上传图片区域 -->
+        <div class="upload-container">
+            <router-link to="/" class="file">
+                <img :src="imageUrl ? imageUrl : pathData" alt="" class="img">
+                <div class="reupload-text">点击重新上传</div>
+            </router-link>
         </div>
-    </body>
+        <div class="black-back">
+        </div>
+        <!-- 检索结果展示 -->
+        <h2 class="result-title">相似图片</h2>
+        <div class="waterfall wf-wrap" ref="waterfall">
+            <ul>
+                <transition-group name="list" tag="li">
+                    <li v-for="(item, index) in waterfallList" :key="index" class="wf-item" :style="{
+                    top: item.top + 'px',
+                    left: item.left + 'px',
+                    width: item.width + 'px',
+                    height: item.height + 'px',
+                }">
+                        <div class="v-waterfall-item">
+                            <img :src="item.src" @click="openOriginal(item.src)" />
+                        </div>
+                    </li>
+                </transition-group>
+            </ul>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -59,9 +53,6 @@ export default {
         }
     },
     methods: {
-        handleScroll() {
-            this.$refs.scrollContainer.scrollLeft = 0;
-        },
         receiveAndStoreData() {
             // 接收数据并存储到本地数据中
             this.plistData = this.plist;
@@ -197,35 +188,36 @@ export default {
 
 <style>
 body {
-    margin: 0;
+    margin-left: -10px;
     overflow-x: hidden;
-    height: 100vh;
 }
 
 .search-result {
     text-align: center;
-    position: sticky;
 }
 
 .page-title {
-    margin-bottom: 20px;
+    margin-top: 40px; /* 调整标题上边距 */
+    margin-bottom: 0px; /* 调整标题下边距 */
     font-family: "等线", Arial, sans-serif;
 }
 
 .upload-container {
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 }
 
 .black-back {
     background-color: #000;
     padding: 80px;
     width: 100%;
+    margin-bottom: 80px; /* 调整黑条下边距 */
 }
 
 .result-title {
-    position: absolute;
-    margin-top: 80px;
-    left: 60px;
+    margin-top: 40px; /* 调整相似图片上边距 */
+    margin-bottom: 20px; /* 调整相似图片下边距 */
+    text-align: left;
+    margin-left: 70px; /* 调整相似图片左边距 */
 }
 
 .result-image {
@@ -284,8 +276,8 @@ ul li {
 
 .wf-wrap {
     position: relative;
-    width: 1500px;
-    margin: 0 auto;
+    width: 90%; /* 使用屏幕的90%宽度 */
+    margin: 0 auto; /* 自动边距用于水平居中 */
 }
 
 .wf-item {

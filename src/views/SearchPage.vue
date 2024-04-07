@@ -153,8 +153,8 @@ export default {
         const cropData = this.cropper.getData();
         this.$store.commit('setCropData', cropData);
 
-        this.selectedMaterials.forEach((materialId, index) => {
-          formData.append(`materialId[${index}]`, materialId.toString());
+        this.selectedMaterials.forEach((materialId) => {
+          formData.append('materialId', materialId.toString());
         });
 
         fetch('http://127.0.0.1:5000/search', {
