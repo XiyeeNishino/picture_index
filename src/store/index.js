@@ -12,9 +12,9 @@ export default createStore({
         height: 163,
         rotate: 0,
       },
-      imageDataUrl: null,
+      imageDataUrl: "/image/default.png",
       fromResultPage: true,
-      filename: null,
+      filename: "default.png",
     };
   },
   mutations: {

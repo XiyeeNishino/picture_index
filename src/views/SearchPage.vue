@@ -128,6 +128,7 @@ export default {
       isSearching: false,
       dots: '',
       searchIntervalId: null,
+      isNew: false,
     };
   },
   methods: {
@@ -222,6 +223,7 @@ export default {
           }
           this.$refs.cropperImage.src = e.target.result;
           this.$refs.cropperImage.onload = () => {
+            this.isNew = true;
             this.initializeCropper();
           };
         };
@@ -246,7 +248,7 @@ export default {
         ready: () => {
           const fromResultPage = this.$store.state.fromResultPage;
           const storedCropData = this.$store.state.cropData;
-          if (fromResultPage && storedCropData && storedCropData.width > 0 && storedCropData.height > 0) {
+          if (fromResultPage && storedCropData && storedCropData.width > 0 && storedCropData.height > 0 && !this.isNew) {
             this.cropper.setData(storedCropData);
           }
         },
@@ -297,19 +299,27 @@ export default {
     },
   },
   mounted() {
-    const fromResultPage = this.$store.state.fromResultPage;
+    // const fromResultPage = this.$store.state.fromResultPage;
+    // const imageDataUrl = this.$store.state.imageDataUrl;
+    // if (fromResultPage && imageDataUrl) {
+    //   this.$nextTick(() => {
+    //     this.$refs.cropperImage.src = imageDataUrl;
+    //     this.$refs.cropperImage.onload = () => {
+    //       this.initializeCropper();
+    //       this.fileName = this.$store.state.filename;
+    //     };
+    //   });
+    // } else {
+    //   this.initializeCropper();
+    // }
     const imageDataUrl = this.$store.state.imageDataUrl;
-    if (fromResultPage && imageDataUrl) {
-      this.$nextTick(() => {
-        this.$refs.cropperImage.src = imageDataUrl;
-        this.$refs.cropperImage.onload = () => {
-          this.initializeCropper();
-          this.fileName = this.$store.state.filename;
-        };
-      });
-    } else {
-      this.initializeCropper();
-    }
+    this.$nextTick(() => {
+      this.$refs.cropperImage.src = imageDataUrl;
+      this.$refs.cropperImage.onload = () => {
+        this.initializeCropper();
+        this.fileName = this.$store.state.filename;
+      };
+    });
   },
   beforeUnmount() {
     this.$store.commit('setFromResultPage', false);
