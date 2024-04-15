@@ -47,15 +47,17 @@ export default {
             marginRight: 10,
             marginBottom: 10,
             colHeights: [],
-            apiIndex: 1,
+            apiIndex: 0,
             imageBatchSize: 100,  // 每批加载的图片数量
             imagesLoaded: 0,
+            loadingInProgress: false,
         }
     },
     methods: {
         receiveAndStoreData() {
             // 接收数据并存储到本地数据中
             this.plistData = this.plist;
+            console.log(this.plist);
             this.pathData = this.path;
         },
         init() {
@@ -69,33 +71,38 @@ export default {
                 this.waterfallCol
             this.loadImgs(this.apiIndex)
         },
-        loadImgs() {
-            let promiseAll = [],
-                imgs = [],
-                start = this.imagesLoaded,
-                end = Math.min(this.imagesLoaded + this.imageBatchSize, this.images.length);
-            this.imagesLoaded = end;
-
-            for (let i = start; i < end; i++) {
-                promiseAll.push(new Promise(resolve => {
-                    imgs[i] = new Image();
-                    imgs[i].src = this.images[i];
-                    imgs[i].onload = () => {
-                        let imgData = {
-                            height: (imgs[i].height * this.colWidth) / imgs[i].width,
-                            width: this.colWidth,
-                            src: this.images[i]
-                        };
-                        this.waterfallList.push(imgData);
-                        this.rankImgs(imgData);
-                        resolve(imgs[i]);
-                    };
-                }));
+        loadImgs(index = 0) {
+            if (index >= this.images.length || this.loadingInProgress) {
+                return;
             }
 
-            Promise.all(promiseAll).then(() => {
-                this.observe();
-            });
+            this.loadingInProgress = true; 
+            let img = new Image();
+            img.src = this.images[index];
+            console.log(index);
+            console.log(img.src);
+
+            img.onload = () => {
+                let imgHeight = (img.height * this.colWidth) / img.width;
+                let imgData = {
+                    src: this.images[index],
+                    width: this.colWidth,
+                    height: imgHeight,
+                    top: 0,
+                    left: 0
+                };
+
+                this.rankImgs(imgData);
+                this.$forceUpdate(); 
+                this.loadingInProgress = false; 
+                this.loadImgs(index + 1);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load image:", img.src);
+                this.loadingInProgress = false;
+                this.loadImgs(index + 1);
+            };
         },
         observe() {
             let imgs = document.getElementsByClassName('wf-item');
@@ -121,10 +128,15 @@ export default {
             window.open(imageUrl, '_blank');
         },
         rankImgs(imgData) {
-            let min = this.filterMin()
-            imgData.top = min.minHeight
-            imgData.left = min.minIndex * (this.colWidth + this.marginRight)
-            this.colHeights[min.minIndex] += imgData.height + this.marginBottom
+            let min = this.filterMin();
+            imgData.top = min.minHeight;
+            imgData.left = min.minIndex * (this.colWidth + this.marginRight);
+
+            // 更新列高
+            this.colHeights[min.minIndex] += imgData.height + this.marginBottom;
+
+            // 将图片数据加入到列表
+            this.waterfallList.push(imgData);
         },
         filterMin() {
             let minHeight = Math.min.apply(null, this.colHeights)
@@ -179,7 +191,8 @@ export default {
         ...mapState(['plist', 'path']),
     },
     mounted() {
-        this.init()
+        this.init();
+        this.loadImgs(0); 
     },
     unmounted() {
     },

@@ -6,15 +6,16 @@ export default createStore({
       plist: JSON.parse(sessionStorage.getItem('plist')) || [],
       path: sessionStorage.getItem('path') || '',
       cropData: {
-        x: 0,
-        y: 0,
-        width: 230,
-        height: 163,
+        x: 204.8,
+        y: 133.6,
+        width: 1638.4,
+        height: 1068.8,
         rotate: 0,
       },
       imageDataUrl: "/image/default.png",
       fromResultPage: true,
       filename: "default.png",
+      material:["1"],
     };
   },
   mutations: {
@@ -37,6 +38,9 @@ export default createStore({
     },
     setFileName(state, fileName) {
       state.filename = fileName;
+    },
+    setMaterial(state, material) {
+      state.material = material;
     }
   },
 });

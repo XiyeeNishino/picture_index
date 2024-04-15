@@ -143,6 +143,15 @@ export default {
         return;
       }
 
+      if (this.selectedMaterials.length === 0) {
+        ElNotification({
+          title: '警告',
+          message: '请选择检索数据库',
+          type: 'warning',
+        });
+        return;
+      }
+
       this.isSearching = true;
       this.$store.commit('setFromResultPage', true);
       this.updateSearchMessage();
@@ -153,6 +162,7 @@ export default {
 
         const cropData = this.cropper.getData();
         this.$store.commit('setCropData', cropData);
+        this.$store.commit('setMaterial', this.selectedMaterials);
 
         this.selectedMaterials.forEach((materialId) => {
           formData.append('materialId', materialId.toString());
@@ -315,6 +325,7 @@ export default {
     const imageDataUrl = this.$store.state.imageDataUrl;
     this.$nextTick(() => {
       this.$refs.cropperImage.src = imageDataUrl;
+      this.selectedMaterials = this.$store.state.material;
       this.$refs.cropperImage.onload = () => {
         this.initializeCropper();
         this.fileName = this.$store.state.filename;
